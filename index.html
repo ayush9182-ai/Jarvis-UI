@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next-Gen AI Assistant</title>
+    <!-- Tailwind CSS for Ultra-Modern Cyberpunk UI -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @keyframes pulse-neon {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(6, 182, 212, 0.8); }
+        }
+        .avatar-active { animation: pulse-neon 2s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Header Section -->
+    <header class="p-5 flex justify-between items-center border-b border-slate-900 bg-slate-900/50 backdrop-blur-md">
+        <h1 id="app-title" class="text-xl font-bold tracking-wider text-cyan-400">JARVIS SYSTEM</h1>
+        <button onclick="toggleSettings()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
+            ⚙️ Settings
+        </button>
+    </header>
+
+    <!-- Main Avatar Interface -->
+    <main class="flex flex-col items-center justify-center flex-grow p-4 gap-8">
+        <!-- The Live Avatar Core -->
+        <div id="avatar-core" class="w-48 h-48 rounded-full border-4 border-cyan-500 flex items-center justify-center bg-slate-900 avatar-active cursor-pointer shadow-lg transition-all">
+            <div class="w-40 h-40 rounded-full border-2 border-dashed border-cyan-400/50 flex items-center justify-center">
+                <span id="status-text" class="text-xs tracking-widest text-cyan-400 animate-pulse">ONLINE</span>
+            </div>
+        </div>
+
+        <!-- Chat Output Logs -->
+        <div class="w-full max-w-md bg-slate-900/60 p-4 rounded-xl border border-slate-800 min-h-[100px] max-h-[200px] overflow-y-auto">
+            <p id="user-speech" class="text-slate-400 italic text-sm">Aapne kaha: Tap karke bolo...</p>
+            <p id="ai-response" class="text-cyan-300 font-medium mt-2">Jarvis: Hello Boss, system ready hai.</p>
+        </div>
+    </main>
+
+    <!-- Bottom Controls -->
+    <footer class="p-6 flex justify-center bg-slate-900/30">
+        <button id="mic-btn" onclick="startListening()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-8 rounded-full shadow-lg shadow-cyan-600/30 transition-all transform active:scale-95">
+            Bolo (Tap to Speak)
+        </button>
+    </footer>
+
+    <!-- Settings Modal (Name Customization System) -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-sm flex flex-col gap-4">
+            <h2 class="text-lg font-bold text-cyan-400">System Personalization</h2>
+            
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">AI Assistant Ka Naam</label>
+                <input type="text" id="bot-name-input" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white focus:outline-none focus:border-cyan-500" value="Jarvis">
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">Apna Naam (Owner Name)</label>
+                <input type="text" id="owner-name-input" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white focus:outline-none focus:border-cyan-500" value="Boss">
+            </div>
+
+            <div class="flex gap-2 mt-2">
+                <button onclick="saveSettings()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 rounded-lg transition-all">Save</button>
+                <button onclick="toggleSettings()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg transition-all">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic with Live Terminal Connection -->
+    <script>
+        // Load Settings on Start from LocalStorage
+        let botName = localStorage.getItem('botName') || 'Jarvis';
+        let ownerName = localStorage.getItem('ownerName') || 'Boss';
+        
+        function updateUI() {
+            document.getElementById('app-title').innerText = `${botName.toUpperCase()} SYSTEM`;
+            document.getElementById('ai-response').innerText = `${botName}: Hello ${ownerName}, system ready hai.`;
+            document.getElementById('bot-name-input').value = botName;
+            document.getElementById('owner-name-input').value = ownerName;
+        }
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function saveSettings() {
+            botName = document.getElementById('bot-name-input').value || 'Jarvis';
+            ownerName = document.getElementById('owner-name-input').value || 'Boss';
+            localStorage.setItem('botName', botName);
+            localStorage.setItem('ownerName', ownerName);
+            updateUI();
+            toggleSettings();
+        }
+
+        function startListening() {
+            document.getElementById('status-text').innerText = "LISTENING...";
+            document.getElementById('status-text').classList.remove('text-cyan-400');
+            document.getElementById('status-text').classList.add('text-red-400');
+            
+            // Web Speech API for Instant Voice Input
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'hi-IN';
+            
+            recognition.onresult = function(event) {
+                const text = event.results[0][0].transcript;
+                document.getElementById('user-speech').innerText = `Aapne kaha: ${text}`;
+                document.getElementById('status-text').innerText = "THINKING...";
+                
+                // Send text to Termux via Pinggy live tunnel
+                sendToBackend(text);
+            };
+
+            recognition.onerror = function() {
+                resetAvatarStatus();
+            };
+
+            recognition.start();
+        }
+
+        function resetAvatarStatus() {
+            document.getElementById('status-text').innerText = "ONLINE";
+            document.getElementById('status-text').classList.remove('text-red-400');
+            document.getElementById('status-text').classList.add('text-cyan-400');
+        }
+
+        function sendToBackend(text) {
+            // Tumhara exact live tunnel URL laga diya hai yahan
+            fetch('https://ptyfw-106-219-232-211.run.pinggy-free.link/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text, bot_name: botName, owner_name: ownerName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('ai-response').innerText = `${botName}: ${data.response}`;
+                resetAvatarStatus();
+            })
+            .catch(err => {
+                document.getElementById('ai-response').innerText = `${botName}: Server busy hai ya connect nahi ho paa raha.`;
+                resetAvatarStatus();
+            });
+        }
+
+        // Initialize UI
+        updateUI();
+    </script>
+</body>
+</html>
