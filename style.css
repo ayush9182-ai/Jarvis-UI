@@ -1,0 +1,20 @@
+body {
+  background: radial-gradient(circle, #000010, #020024);
+  color: cyan;
+  font-family: 'Orbitron', sans-serif;
+  text-align: center;
+}
+
+.jarvis-face {
+  width: 200px;
+  height: 200px;
+  margin: 100px auto;
+  border-radius: 50%;
+  box-shadow: 0 0 40px cyan, inset 0 0 20px blue;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 20px cyan; }
+  100% { box-shadow: 0 0 60px blue; }
+}
