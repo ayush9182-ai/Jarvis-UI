@@ -1,20 +1,39 @@
+/* style.css */
 body {
-  background: radial-gradient(circle, #000010, #020024);
-  color: cyan;
+  background: radial-gradient(circle at center, #000010, #001133);
   font-family: 'Orbitron', sans-serif;
+  color: cyan;
+  overflow: hidden;
+}
+.jarvis-container {
   text-align: center;
+  margin-top: 100px;
 }
-
-.jarvis-face {
-  width: 200px;
-  height: 200px;
-  margin: 100px auto;
-  border-radius: 50%;
-  box-shadow: 0 0 40px cyan, inset 0 0 20px blue;
-  animation: pulse 2s infinite;
+.avatar {
+  width: 200px; height: 200px;
+  margin: 0 auto;
+  background: url('assets/avatar.png') center/cover no-repeat;
+  filter: drop-shadow(0 0 30px cyan);
+  animation: glow 3s infinite alternate;
 }
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 20px cyan; }
-  100% { box-shadow: 0 0 60px blue; }
+@keyframes glow {
+  from { filter: drop-shadow(0 0 10px blue); }
+  to { filter: drop-shadow(0 0 40px cyan); }
+}
+button {
+  background: transparent;
+  border: 2px solid cyan;
+  color: cyan;
+  padding: 10px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+button:hover {
+  background: cyan;
+  color: black;
+}
+#output {
+  margin-top: 20px;
+  font-size: 20px;
 }
