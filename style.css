@@ -1,1 +1,1 @@
-.primary-btn.listening{background:linear-gradient(100deg,#ff7b91,#ffb86b);color:#220812;animation:listenPulse 1.2s infinite alternate}.primary-btn.listening .mic-icon{animation:micBounce .7s infinite alternate}@keyframes listenPulse{from{box-shadow:0 0 0 0 #ff809955}to{box-shadow:0 0 0 12px #ff809900}}@keyframes micBounce{to{transform:scale(1.3)}}
+/* Native Android app is primary. This file is retained only for repository history. */
