@@ -22,6 +22,10 @@ class JarvisBrain(private val context: Context) {
         prefs.edit().putString("gemini_key", key).apply()
     }
 
+    fun clearHistory() {
+        prefs.edit().remove("history").apply()
+    }
+
     fun execute(raw: String, callback: (String) -> Unit) {
         val command = raw.trim()
         if (command.isBlank()) {
@@ -30,9 +34,8 @@ class JarvisBrain(private val context: Context) {
         }
 
         val lower = command.lowercase()
-
         when {
-            lower.matches(Regex("^(hello|hi|hlo|helo|hey|namaste|yo|sup)(\s+jarvis)?[.!?]*$")) -> {
+            lower.matches(Regex("^(hello|hi|hlo|helo|hey|namaste|yo|sup)(\\s+jarvis)?[.!?]*$")) -> {
                 callback("Hello Boss! Jarvis online hai. Aap kya karna chahte ho?")
             }
 
@@ -55,7 +58,7 @@ class JarvisBrain(private val context: Context) {
                     context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number")))
                     callback("Dialer open kar diya, Boss.")
                 } else {
-                    callback("Boss, contact name ke liye device contacts access chahiye. Abhi number format use kijiye: call 9876543210")
+                    callback("Boss, abhi number format use kijiyega: call 9876543210")
                 }
             }
 
@@ -64,8 +67,7 @@ class JarvisBrain(private val context: Context) {
                 val number = target.takeWhile { it.isDigit() || it == '+' }
                 val body = target.removePrefix(number).trim()
                 if (number.length >= 7) {
-                    val uri = Uri.parse("smsto:$number")
-                    val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
+                    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$number")).apply {
                         putExtra("sms_body", if (body.isBlank()) "Hello Boss!" else body)
                     }
                     context.startActivity(intent)
@@ -85,13 +87,9 @@ class JarvisBrain(private val context: Context) {
                 callback("Timer set hai ${minutes} minute ke liye, Boss.")
             }
 
-            apiKey().isNotBlank() -> {
-                askGemini(command, callback)
-            }
+            apiKey().isNotBlank() -> askGemini(command, callback)
 
-            else -> {
-                callback("Boss, API key save kijiye; tab main intelligent answers doon. Main apps, calls, SMS, settings aur web search handle kar sakta hoon.")
-            }
+            else -> callback("Boss, API key save kijiye; tab main intelligent answers doon. Main apps, calls, SMS, settings aur web search handle kar sakta hoon.")
         }
     }
 
@@ -129,24 +127,25 @@ class JarvisBrain(private val context: Context) {
     private fun askGemini(prompt: String, callback: (String) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val key = apiKey()
                 val payload = JSONObject().apply {
                     put("contents", org.json.JSONArray().put(
                         JSONObject().put(
                             "parts",
-                            org.json.JSONArray().put(JSONObject().put("text", "You are Jarvis. Address the user as Boss. Keep the reply brief and in Hinglish. User: $prompt"))
+                            org.json.JSONArray().put(
+                                JSONObject().put("text", "You are Jarvis. Address the user as Boss. Reply in Hinglish and keep it brief. User: $prompt")
+                            )
                         )
                     ))
                 }
 
-                val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$key")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "POST"
-                conn.setRequestProperty("Content-Type", "application/json")
-                conn.doOutput = true
-                conn.outputStream.use { it.write(payload.toString().toByteArray()) }
+                val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey()}")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.doOutput = true
+                connection.outputStream.use { it.write(payload.toString().toByteArray()) }
 
-                val response = conn.inputStream.bufferedReader().readText()
+                val response = connection.inputStream.bufferedReader().readText()
                 val answer = JSONObject(response)
                     .getJSONArray("candidates")
                     .getJSONObject(0)

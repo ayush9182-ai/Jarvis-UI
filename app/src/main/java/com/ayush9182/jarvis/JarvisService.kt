@@ -21,6 +21,7 @@ class JarvisService : Service() {
             .setContentTitle("Jarvis Boss Mode")
             .setContentText("Voice assistant active. Say: Hey Jarvis")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
         startForeground(1, notification)

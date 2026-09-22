@@ -1,21 +1,23 @@
-# Jarvis Android app
+# Jarvis Android assistant
 
-This repository is now the native Android starter for the Jarvis assistant.
+This repository now contains the native Android app starter for Jarvis 2.0.
 
 ## Included
 
-- Android app project structure under `app/`
-- Boss-style command interface
-- voice input support
-- app opening, calls, SMS, settings access
-- optional Gemini API key setting
-- background service scaffold for Boss mode
-- notices for limitations of a browser vs native Android assistant
+- Boss-style screen and futuristic dark UI
+- voice input support via Android SpeechRecognizer
+- text command processing for greeting, app opening, search, call, SMS and timers
+- Gemini API key entry via a dialog
+- foreground service scaffold for Boss mode
+- app permissions for microphone, SMS, call, notifications and foreground service access
 
-## Important
+## Important note
 
-A true always-on `Hey Jarvis` experience requires native Android background microphone handling. Browser-based APIs cannot provide locked-screen wake-word functionality. This project is the native Android foundation for that next step.
+A real always-on `Hey Jarvis` wake-word on Android requires a foreground microphone service and device-level permissions. Browsers cannot provide locked-screen, background microphone wake-word behavior. This project is the correct native app foundation for that next step.
 
 ## Build
 
-Open the repo in Android Studio and build the app. You can also run Gradle from the project root.
+Open the project in Android Studio and run the app. If needed, use:
+
+./gradlew assembleDebug
+
