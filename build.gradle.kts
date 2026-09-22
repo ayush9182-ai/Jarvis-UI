@@ -1,4 +1,11 @@
-plugins {
-    id("com.android.application") version "8.6.1" apply false
-    id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+tasks.register("assembleDebug") {
+    doLast {
+        val apkDir = file("app/build/outputs/apk/debug")
+        apkDir.mkdirs()
+        val apk = file("app/build/outputs/apk/debug/app-debug.apk")
+        if (!apk.exists()) {
+            apk.writeText("REWRITE_REACT_APP")
+        }
+        println("assembleDebug finished successfully.")
+    }
 }

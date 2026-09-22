@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #06101D;
+    color: #FFFFFF;
+    overflow-x: hidden;
+  }
+}
+
+/* Subtle futuristic glowing effects */
+.glow-cyan {
+  box-shadow: 0 0 25px rgba(98, 230, 255, 0.25);
+}
+
+.glow-cyan-sm {
+  box-shadow: 0 0 12px rgba(98, 230, 255, 0.2);
+}
+
+.glow-text-cyan {
+  text-shadow: 0 0 10px rgba(98, 230, 255, 0.5);
+}
+
+/* Custom scrollbar for dark sci-fi theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #081626;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #15324d;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #25537d;
+}

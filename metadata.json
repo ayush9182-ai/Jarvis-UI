@@ -1,0 +1,6 @@
+{
+  "name": "Jarvis Assistant",
+  "description": "Futuristic AI assistant with HUD orb, voice control, intent routing, and Gemini intelligence",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
