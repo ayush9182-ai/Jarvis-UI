@@ -1,18 +1,57 @@
-<!-- index.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Jarvis Premium Interface</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07111f" />
+  <title>JARVIS • Android Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="jarvis-container">
-    <canvas id="particles"></canvas>
-    <div class="avatar"></div>
-    <button id="activate">Activate Jarvis</button>
-    <div id="output"></div>
-  </div>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">J</span><div><strong>JARVIS</strong><small>ANDROID COMMAND CENTER</small></div></div>
+      <div class="status-pill"><span class="status-dot"></span><span id="systemStatus">SYSTEM ONLINE</span></div>
+    </header>
+
+    <section class="hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">PERSONAL MOBILE OPERATOR</p>
+        <h1>Command your<br><span>phone.</span></h1>
+        <p class="hero-text">Speak naturally. Jarvis turns your command into a safe Android action or an intelligent response.</p>
+        <div class="hero-actions">
+          <button class="primary-btn" id="micButton"><span class="mic-icon">◉</span><span id="micLabel">Start listening</span></button>
+          <button class="ghost-btn" id="helpButton">How it works</button>
+        </div>
+        <div class="support-note"><span>●</span> Browser prototype · Android actions open with secure system prompts</div>
+      </div>
+
+      <div class="orb-panel">
+        <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div>
+        <div class="core"><div class="core-ring"><span>J</span></div><div class="core-lines"></div></div>
+        <div class="orb-caption"><span class="pulse"></span><span id="orbStatus">READY FOR COMMAND</span></div>
+      </div>
+    </section>
+
+    <section class="command-card">
+      <div class="command-header"><div><span class="section-kicker">COMMAND CONSOLE</span><h2>What should I do?</h2></div><span class="keyboard-hint">ENTER ↵</span></div>
+      <div class="command-input-wrap"><span class="prompt">›</span><input id="commandInput" autocomplete="off" placeholder="Try: call mom, open YouTube, message Rahul I'm on my way" /><button id="runButton">EXECUTE <span>↗</span></button></div>
+      <div class="suggestions" id="suggestions"><button data-command="Open YouTube">Open YouTube</button><button data-command="Call mom">Call mom</button><button data-command="Search latest tech news">Search the web</button><button data-command="Set a 25 minute timer">Focus timer</button></div>
+    </section>
+
+    <section class="dashboard-grid">
+      <div class="panel activity-panel"><div class="panel-heading"><div><span class="section-kicker">LIVE FEED</span><h3>Activity</h3></div><button class="clear-btn" id="clearHistory">Clear</button></div><div id="activityList" class="activity-list"><div class="empty-state">Your commands will appear here.</div></div></div>
+      <div class="panel capabilities-panel"><span class="section-kicker">CAPABILITIES</span><h3>Built for real life</h3><div class="capability-list"><div class="capability"><span class="cap-icon">⌕</span><div><b>Launch apps</b><small>YouTube, WhatsApp, Maps, Spotify & more</small></div><span class="arrow">↗</span></div><div class="capability"><span class="cap-icon">☎</span><div><b>Connect instantly</b><small>Call or draft an SMS without hunting contacts</small></div><span class="arrow">↗</span></div><div class="capability"><span class="cap-icon">✦</span><div><b>Think with you</b><small>Search, answer and plan your next move</small></div><span class="arrow">↗</span></div></div></div>
+    </section>
+    <footer><span>JARVIS UI / 2.0 PROTOTYPE</span><span>VOICE + COMMANDS + ACTIONS</span></footer>
+  </main>
+  <div class="toast" id="toast"></div>
+  <dialog id="helpDialog"><button class="dialog-close" id="closeDialog">×</button><span class="section-kicker">QUICK GUIDE</span><h2>Talk naturally.</h2><p>Use commands like <b>“open WhatsApp”</b>, <b>“call 9876543210”</b>, <b>“message Rahul hello”</b>, <b>“search best phones”</b> or <b>“set a 10 minute timer”</b>.</p><p class="dialog-note">This lightweight web version uses Android intent links and browser APIs. Full background control, wake-word listening and silent messaging require the native Android companion.</p></dialog>
   <script src="script.js"></script>
 </body>
 </html>
