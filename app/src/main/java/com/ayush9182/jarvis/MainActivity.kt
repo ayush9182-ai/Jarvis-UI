@@ -20,20 +20,20 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
+import android.view.animation.ScaleAnimation
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var commandInput: EditText
     private lateinit var statusText: TextView
     private lateinit var responseText: TextView
+    private lateinit var orb: View
     private lateinit var brain: JarvisBrain
     private var tts: TextToSpeech? = null
     private var recognizer: SpeechRecognizer? = null
@@ -41,420 +41,67 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-        )
-
+        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         brain = JarvisBrain(this)
         initUi()
         initTts()
         requestPermissionsIfNeeded()
+        intent.getStringExtra(EXTRA_COMMAND)?.let { commandInput.setText(it); handleCommand(it) }
     }
 
     private fun initUi() {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#06101D"))
-            setPadding(dp(22), dp(20), dp(22), dp(18))
-        }
+        val root = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(6,16,29)); setPadding(dp(22),dp(20),dp(22),dp(18)) }
+        val top = LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; layoutParams=LinearLayout.LayoutParams(-1,dp(60)) }
+        top.addView(TextView(this).apply { text="JARVIS"; textSize=18f; typeface=Typeface.DEFAULT_BOLD; setTextColor(Color.WHITE) })
+        top.addView(View(this), LinearLayout.LayoutParams(0,1,1f))
+        top.addView(TextView(this).apply { text="● SYSTEM ONLINE"; textSize=10f; setTextColor(Color.rgb(139,233,215)); setPadding(dp(10),dp(6),dp(10),dp(6)); background=roundedBg(Color.rgb(18,37,58),999f) })
+        root.addView(top)
 
-        val topBar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(60)
-            )
-        }
-
-        val brand = TextView(this).apply {
-            text = "JARVIS"
-            typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            textSize = 18f
-            setTextColor(Color.WHITE)
-            setPadding(0, 0, dp(10), 0)
-        }
-        topBar.addView(brand)
-
-        val spacer = LinearLayout(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
-        topBar.addView(spacer)
-
-        val online = TextView(this).apply {
-            text = "SYSTEM ONLINE"
-            setTextColor(Color.parseColor("#8BE9D7"))
-            textSize = 10f
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            setPadding(dp(10), dp(6), dp(10), dp(6))
-            background = roundedBg(Color.parseColor("#12253a"), 999f)
-        }
-        topBar.addView(online)
-        root.addView(topBar)
-
-        val orbWrap = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(330)
-            )
-        }
-
-        val orb = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            background = circleGlowBackground()
-            layoutParams = LinearLayout.LayoutParams(dp(250), dp(250))
-        }
-
-        val orbLetter = TextView(this).apply {
-            text = "J"
-            textSize = 80f
-            typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            setTextColor(Color.parseColor("#DDF9FF"))
-            gravity = Gravity.CENTER
-        }
-        orb.addView(orbLetter)
+        val orbWrap=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER; layoutParams=LinearLayout.LayoutParams(-1,dp(330)) }
+        orb=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER; background=circleBg(); layoutParams=LinearLayout.LayoutParams(dp(250),dp(250)) }
+        orb.addView(TextView(this).apply { text="J"; textSize=80f; typeface=Typeface.DEFAULT_BOLD; setTextColor(Color.rgb(221,249,255)); gravity=Gravity.CENTER })
         orbWrap.addView(orb)
+        statusText=TextView(this).apply { text="READY FOR COMMAND"; textSize=11f; setTextColor(Color.rgb(98,230,255)); typeface=Typeface.DEFAULT_BOLD; setPadding(0,dp(20),0,0); gravity=Gravity.CENTER }
+        orbWrap.addView(statusText); root.addView(orbWrap)
 
-        statusText = TextView(this).apply {
-            text = "EXECUTING COMMAND"
-            textSize = 11f
-            setTextColor(Color.parseColor("#62e6ff"))
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            setPadding(0, dp(20), 0, 0)
-            gravity = Gravity.CENTER
-        }
-        orbWrap.addView(statusText)
-        root.addView(orbWrap)
+        val card=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(18),dp(18),dp(18),dp(18)); background=roundedBg(Color.rgb(12,34,54),24f) }
+        card.addView(TextView(this).apply { text="COMMAND CONSOLE"; textSize=12f; setTextColor(Color.rgb(98,230,255)); typeface=Typeface.DEFAULT_BOLD })
+        card.addView(TextView(this).apply { text="What should I do?"; textSize=26f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD; setPadding(0,dp(8),0,dp(18)) })
+        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=roundedBg(Color.rgb(16,39,61),18f); setPadding(dp(12),dp(8),dp(8),dp(8)) }
+        row.addView(TextView(this).apply { text=">"; textSize=24f; setTextColor(Color.rgb(98,230,255)); setPadding(dp(8),0,dp(10),0) })
+        commandInput=EditText(this).apply { hint="Try: call mom, open YouTube"; textSize=16f; setTextColor(Color.WHITE); setHintTextColor(Color.rgb(122,152,179)); background=null; inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES; layoutParams=LinearLayout.LayoutParams(0,-2,1f) }
+        row.addView(commandInput)
+        row.addView(Button(this).apply { text="↗"; textSize=22f; setTextColor(Color.rgb(6,16,29)); background=roundedBg(Color.rgb(207,248,255),16f); setOnClickListener{handleCommand(commandInput.text.toString())} })
+        card.addView(row)
+        val suggestions=listOf("Open YouTube","Call mom","Search the web","Focus timer")
+        val chips=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.START; layoutParams=LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(16)} }
+        suggestions.forEachIndexed { i,s -> chips.addView(Button(this).apply{text=s;textSize=12f;setTextColor(Color.rgb(214,231,248));background=roundedBg(Color.rgb(22,42,64),12f);setPadding(dp(12),dp(8),dp(12),dp(8));setOnClickListener{commandInput.setText(s);handleCommand(s)}}); if(i<suggestions.lastIndex)chips.addView(View(this),LinearLayout.LayoutParams(dp(6),1)) }
+        card.addView(chips); root.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
 
-        val commandCard = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(18), dp(18), dp(18))
-            background = roundedBg(Color.parseColor("#0c2236"), 24f)
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(8) }
-        }
-
-        val commandHeader = TextView(this).apply {
-            text = "COMMAND CONSOLE"
-            textSize = 12f
-            setTextColor(Color.parseColor("#62e6ff"))
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            setPadding(0, 0, 0, dp(8))
-        }
-        commandCard.addView(commandHeader)
-
-        val ask = TextView(this).apply {
-            text = "What should I do?"
-            textSize = 26f
-            typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            setTextColor(Color.WHITE)
-            setPadding(0, 0, 0, dp(18))
-        }
-        commandCard.addView(ask)
-
-        val inputRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            background = roundedBg(Color.parseColor("#10273d"), 18f)
-            setPadding(dp(12), dp(8), dp(8), dp(8))
-        }
-
-        val arrow = TextView(this).apply {
-            text = ">"
-            textSize = 24f
-            setTextColor(Color.parseColor("#62e6ff"))
-            setPadding(dp(8), 0, dp(10), 0)
-        }
-        inputRow.addView(arrow)
-
-        commandInput = EditText(this).apply {
-            hint = "Try: call mom, open YouTube, message Rahul I'm on my way"
-            textSize = 16f
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#7A98B3"))
-            background = null
-            isSingleLine = false
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-        }
-        inputRow.addView(commandInput)
-
-        val runBtn = Button(this).apply {
-            text = "↗"
-            textSize = 22f
-            setTextColor(Color.parseColor("#06101D"))
-            background = roundedBg(Color.parseColor("#CFF8FF"), 16f)
-            setPadding(dp(18), dp(12), dp(18), dp(12))
-            setOnClickListener { handleCommand(commandInput.text.toString()) }
-        }
-        inputRow.addView(runBtn)
-        commandCard.addView(inputRow)
-
-        val chips = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.START
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(16) }
-        }
-
-        val suggestions = listOf("Open YouTube", "Call mom", "Search the web", "Focus timer")
-        suggestions.forEachIndexed { idx, suggestion ->
-            val chip = Button(this).apply {
-                text = suggestion
-                textSize = 12f
-                setTextColor(Color.parseColor("#D6E7F8"))
-                background = roundedBg(Color.parseColor("#162a40"), 12f)
-                setPadding(dp(16), dp(10), dp(16), dp(10))
-                minHeight = dp(42)
-                setOnClickListener { commandInput.setText(suggestion); handleCommand(suggestion) }
-            }
-            chips.addView(chip)
-            if (idx != suggestions.lastIndex) {
-                val pad = View(this).apply { layoutParams = LinearLayout.LayoutParams(dp(8), 1) }
-                chips.addView(pad)
-            }
-        }
-        commandCard.addView(chips)
-        root.addView(commandCard)
-
-        val feedHeader = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(20) }
-        }
-        val liveText = TextView(this).apply {
-            text = "LIVE FEED"
-            textSize = 12f
-            setTextColor(Color.parseColor("#62e6ff"))
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-        }
-        feedHeader.addView(liveText)
-        val blank = LinearLayout(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
-        feedHeader.addView(blank)
-        val clearBtn = Button(this).apply {
-            text = "Clear"
-            setTextColor(Color.parseColor("#8AA4BC"))
-            background = null
-            setOnClickListener { clearHistory() }
-        }
-        feedHeader.addView(clearBtn)
-        root.addView(feedHeader)
-
-        val activityTitle = TextView(this).apply {
-            text = "Activity"
-            textSize = 38f
-            typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            setTextColor(Color.WHITE)
-            setPadding(0, 0, 0, dp(12))
-        }
-        root.addView(activityTitle)
-
-        responseText = TextView(this).apply {
-            text = "Hello Boss! Jarvis online hai."
-            setTextColor(Color.parseColor("#DFF9FF"))
-            textSize = 18f
-            setPadding(dp(18), dp(18), dp(18), dp(18))
-            background = roundedBg(Color.parseColor("#D9F4FF"), 18f)
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
-        root.addView(responseText)
-
-        val micButton = Button(this).apply {
-            text = "🎙 Start listening"
-            setTextColor(Color.BLACK)
-            background = roundedBg(Color.parseColor("#BCEFFF"), 16f)
-            setOnClickListener { startListening() }
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(20) }
-        }
-        root.addView(micButton)
-
-        val apiButton = Button(this).apply {
-            text = "API KEY"
-            setTextColor(Color.WHITE)
-            background = roundedBg(Color.parseColor("#0F2740"), 12f)
-            setOnClickListener { showApiDialog() }
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(12) }
-        }
-        root.addView(apiButton)
-
+        val feed=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;layoutParams=LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(18)}}
+        feed.addView(TextView(this).apply{text="LIVE FEED";textSize=12f;setTextColor(Color.rgb(98,230,255));typeface=Typeface.DEFAULT_BOLD})
+        feed.addView(View(this),LinearLayout.LayoutParams(0,1,1f))
+        feed.addView(Button(this).apply{text="Clear";setTextColor(Color.rgb(138,164,188));background=null;setOnClickListener{brain.clearHistory();responseText.text="Activity cleared."}}); root.addView(feed)
+        root.addView(TextView(this).apply{text="Activity";textSize=38f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;setPadding(0,0,0,dp(12))})
+        responseText=TextView(this).apply{text="Hello Boss! Jarvis online hai.";textSize=18f;setTextColor(Color.rgb(8,24,35));setPadding(dp(18),dp(18),dp(18),dp(18));background=roundedBg(Color.rgb(217,244,255),18f)}; root.addView(responseText)
+        root.addView(Button(this).apply{text="🎙 Start listening";setTextColor(Color.BLACK);background=roundedBg(Color.rgb(188,239,255),16f);setOnClickListener{startListening()};layoutParams=LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(20)}})
+        root.addView(Button(this).apply{text="⚙ API KEY";setTextColor(Color.WHITE);background=roundedBg(Color.rgb(15,39,64),12f);setOnClickListener{showApiDialog()};layoutParams=LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)}})
         setContentView(root)
+        startOrbAnimation()
     }
 
-    private fun clearHistory() {
-        brain.clearHistory()
-        responseText.text = "Activity cleared."
-    }
+    private fun startOrbAnimation(){ val scale=ScaleAnimation(1f,1.06f,1f,1.06f,Animation.RELATIVE_TO_SELF,.5f,Animation.RELATIVE_TO_SELF,.5f).apply{duration=1400;repeatMode=Animation.REVERSE;repeatCount=Animation.INFINITE}; orb.startAnimation(scale) }
+    private fun handleCommand(raw:String){val text=raw.trim();if(text.isEmpty()){respond("Boss, command dijiye.");return};statusText.text="EXECUTING COMMAND";brain.execute(text){respond(it);statusText.text="READY FOR COMMAND"}}
+    private fun respond(text:String){responseText.text=text;speak(text)}
+    private fun speak(text:String){tts?.speak(text,TextToSpeech.QUEUE_FLUSH,null,"jarvis")}
+    private fun initTts(){tts=TextToSpeech(this){if(it==TextToSpeech.SUCCESS)tts?.language=Locale.ENGLISH}}
 
-    private fun roundedBg(color: Int, radius: Float): GradientDrawable {
-        val d = GradientDrawable()
-        d.shape = GradientDrawable.RECTANGLE
-        d.setColor(color)
-        d.cornerRadius = radius
-        return d
-    }
-
-    private fun circleGlowBackground(): GradientDrawable {
-        val gradient = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(Color.parseColor("#071d2d"))
-            setStroke(dp(4), Color.parseColor("#5FE9FF"))
-        }
-        gradient.setAlpha(230)
-        return gradient
-    }
-
-    private fun initTts() {
-        tts = TextToSpeech(this) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.ENGLISH
-            }
-        }
-    }
-
-    private fun speak(text: String) {
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis")
-    }
-
-    private fun requestPermissionsIfNeeded() {
-        val required = mutableListOf<String>()
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            required += Manifest.permission.RECORD_AUDIO
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-            required += Manifest.permission.CALL_PHONE
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            required += Manifest.permission.SEND_SMS
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            required += Manifest.permission.POST_NOTIFICATIONS
-        }
-        if (required.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, required.toTypedArray(), 101)
-        }
-    }
-
-    private fun handleCommand(raw: String) {
-        val text = raw.trim()
-        if (text.isEmpty()) {
-            responseText.text = "Boss, command dijiye."
-            speak("Boss, command dijiye.")
-            return
-        }
-
-        statusText.text = "EXECUTING COMMAND"
-        brain.execute(text) { result ->
-            responseText.text = result
-            speak(result)
-            statusText.text = "READY FOR COMMAND"
-        }
-    }
-
-    private fun startListening() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionsIfNeeded()
-            return
-        }
-
-        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            responseText.text = "Boss, voice input available nahi hai is device par."
-            return
-        }
-
-        if (isListening) {
-            recognizer?.stopListening()
-            isListening = false
-            return
-        }
-
-        recognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        recognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(bundle: Bundle?) {
-                isListening = true
-                statusText.text = "LISTENING"
-                responseText.text = "Listening, Boss…"
-            }
-
-            override fun onResults(bundle: Bundle?) {
-                val result = bundle?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                if (!result.isNullOrBlank()) {
-                    val cleaned = result.replace(Regex("^(hey\\s+)?jarvis[ :,.-]*", RegexOption.IGNORE_CASE), "").trim()
-                    commandInput.setText(cleaned)
-                    handleCommand(cleaned)
-                }
-                isListening = false
-                statusText.text = "READY FOR COMMAND"
-            }
-
-            override fun onError(error: Int) {
-                isListening = false
-                statusText.text = "READY FOR COMMAND"
-                responseText.text = "Boss, voice capture me issue aayi."
-            }
-
-            override fun onBeginningOfSpeech() {}
-            override fun onBufferReceived(bytes: ByteArray?) {}
-            override fun onEndOfSpeech() {}
-            override fun onPartialResults(bundle: Bundle?) {}
-            override fun onRmsChanged(v: Float) {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
-
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Say: Hey Jarvis")
-        }
-        recognizer?.startListening(intent)
-    }
-
-    private fun showApiDialog() {
-        val box = EditText(this).apply {
-            hint = "Paste Gemini API key"
-            inputType = InputType.TYPE_CLASS_TEXT
-            setText(brain.apiKey())
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Jarvis API key")
-            .setMessage("Gemini API key local storage me save hogi.")
-            .setView(box)
-            .setPositiveButton("Save") { _, _ ->
-                val key = box.text.toString().trim()
-                brain.saveApiKey(key)
-                responseText.text = if (key.isNotBlank()) "API key saved, Boss." else "API key cleared."
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    override fun onDestroy() {
-        tts?.stop()
-        tts?.shutdown()
-        recognizer?.destroy()
-        super.onDestroy()
-    }
-
-    private fun dp(value: Int): Int = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP,
-        value.toFloat(),
-        resources.displayMetrics
-    ).toInt()
+    private fun requestPermissionsIfNeeded(){val p=mutableListOf<String>();listOf(Manifest.permission.RECORD_AUDIO,Manifest.permission.READ_CONTACTS).forEach{if(ContextCompat.checkSelfPermission(this,it)!=PackageManager.PERMISSION_GRANTED)p+=it};if(Build.VERSION.SDK_INT>=33&&ContextCompat.checkSelfPermission(this,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)p+=Manifest.permission.POST_NOTIFICATIONS;if(p.isNotEmpty())ActivityCompat.requestPermissions(this,p.toTypedArray(),101)}
+    private fun startListening(){if(ContextCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){requestPermissionsIfNeeded();return};if(!SpeechRecognizer.isRecognitionAvailable(this)){respond("Boss, voice input available nahi hai.");return};if(isListening){recognizer?.stopListening();isListening=false;return};recognizer=SpeechRecognizer.createSpeechRecognizer(this);recognizer?.setRecognitionListener(object:RecognitionListener{override fun onReadyForSpeech(b:Bundle?){isListening=true;statusText.text="LISTENING"};override fun onResults(b:Bundle?){val r=b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty();val c=r.replace(Regex("^(hey\\s+)?jarvis[ :,.-]*",RegexOption.IGNORE_CASE),"").trim();commandInput.setText(c);handleCommand(c);isListening=false};override fun onError(e:Int){isListening=false;statusText.text="READY FOR COMMAND";respond("Boss, voice capture me issue aayi.")};override fun onBeginningOfSpeech(){};override fun onBufferReceived(b:ByteArray?){};override fun onEndOfSpeech(){};override fun onPartialResults(b:Bundle?){};override fun onRmsChanged(v:Float){};override fun onEvent(t:Int,b:Bundle?){} });recognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);putExtra(RecognizerIntent.EXTRA_LANGUAGE,"en-IN");putExtra(RecognizerIntent.EXTRA_PROMPT,"Say: Hey Jarvis")})}
+    private fun showApiDialog(){val box=EditText(this).apply{hint="Paste Gemini API key";inputType=InputType.TYPE_CLASS_TEXT;setText(brain.apiKey())};AlertDialog.Builder(this).setTitle("Jarvis API key").setMessage("Key local storage me save hogi.").setView(box).setPositiveButton("Save"){_,_->brain.saveApiKey(box.text.toString().trim());respond("API key saved, Boss.")}.setNegativeButton("Cancel",null).show()}
+    private fun roundedBg(c:Int,r:Float)=GradientDrawable().apply{shape=GradientDrawable.RECTANGLE;setColor(c);cornerRadius=r}
+    private fun circleBg()=GradientDrawable().apply{shape=GradientDrawable.OVAL;setColor(Color.rgb(7,29,45));setStroke(dp(4),Color.rgb(95,233,255))}
+    private fun dp(v:Int)=TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,v.toFloat(),resources.displayMetrics).toInt()
+    override fun onDestroy(){tts?.stop();tts?.shutdown();recognizer?.destroy();super.onDestroy()}
+    companion object{const val EXTRA_COMMAND="jarvis_command"}
 }

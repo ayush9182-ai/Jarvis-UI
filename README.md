@@ -1,23 +1,38 @@
-# Jarvis Android assistant
+# Native Jarvis Android app
 
-This repository now contains the native Android app starter for Jarvis 2.0.
+## Added in this build
 
-## Included
+- Native futuristic mobile UI with animated Jarvis orb
+- API-key screen for a user-provided Gemini key, stored locally
+- Boss-style Hindi/English responses and Android text-to-speech
+- Contact-name lookup with `READ_CONTACTS`
+- Confirmation dialogs before opening the dialer or SMS composer
+- Foreground `microphone` service with restart/backoff handling
+- `Hey Jarvis` phrase detection while Boss Mode is running
+- App launching, web search, dialer, SMS draft, settings and Gemini answers
 
-- Boss-style screen and futuristic dark UI
-- voice input support via Android SpeechRecognizer
-- text command processing for greeting, app opening, search, call, SMS and timers
-- Gemini API key entry via a dialog
-- foreground service scaffold for Boss mode
-- app permissions for microphone, SMS, call, notifications and foreground service access
+## Build the APK
 
-## Important note
+1. Open the repository root in Android Studio (not the `app` folder).
+2. Let Gradle sync and install Android SDK 35 if prompted.
+3. Connect an Android phone with USB debugging enabled, or create an emulator.
+4. Select the `app` configuration and press **Run**.
+5. For a debug APK: **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
+6. The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
-A real always-on `Hey Jarvis` wake-word on Android requires a foreground microphone service and device-level permissions. Browsers cannot provide locked-screen, background microphone wake-word behavior. This project is the correct native app foundation for that next step.
+CLI alternative:
 
-## Build
-
-Open the project in Android Studio and run the app. If needed, use:
-
+```bash
 ./gradlew assembleDebug
+```
 
+## First-run setup
+
+1. Allow microphone, contacts and notification permissions.
+2. Tap **API KEY** and paste your Gemini key (do not commit it to Git).
+3. Start Boss Mode from the app to enable the foreground listener.
+4. Say **Hey Jarvis**, then give a command.
+
+## Platform limits
+
+The service uses Android's built-in `SpeechRecognizer` as a lightweight wake-word prototype. Android may stop recognition, restrict microphone use, or kill the service depending on battery policy and device manufacturer. A production-grade always-on detector should replace this with a dedicated on-device wake-word engine and a compliant foreground-service flow. Calls and messages intentionally open a confirmation path; the app does not silently send or place them.
