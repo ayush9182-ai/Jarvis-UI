@@ -16,7 +16,11 @@ class LlmClient(private val context: Context) {
 
     private val prefs = context.getSharedPreferences("jarvis", Context.MODE_PRIVATE)
     fun saveApiKey(key: String) = prefs.edit().putString("gemini_key", key).apply()
-    fun apiKey() = prefs.getString("gemini_key", "").orEmpty()
+    fun apiKey(): String {
+        val userKey = prefs.getString("gemini_key", "").orEmpty()
+        if (userKey.isNotBlank()) return userKey
+        return runCatching { BuildConfig.GEMINI_API_KEY }.getOrDefault("")
+    }
 
     suspend fun answer(prompt: String, memory: String): String = withContext(Dispatchers.IO) {
         val key = apiKey()
